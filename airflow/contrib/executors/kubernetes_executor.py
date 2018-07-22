@@ -140,9 +140,17 @@ class KubeConfig:
             self.kubernetes_section, 'worker_service_account_name')
         self.image_pull_secrets = conf.get(self.kubernetes_section, 'image_pull_secrets')
 
-        # NOTE: user can build the dags into the docker image directly,
-        # this will set to True if so
-        self.dags_in_image = conf.getboolean(self.kubernetes_section, 'dags_in_image')
+        # If this is set, we assume the container for the worker contains the dags
+        # which means we are allow to "skip" the volumes and git repo syncing
+        self.dags_in_worker_container = conf.getboolean(
+            self.kubernetes_section, 'worker_container_contains_dags')
+        
+        # path inside the worker container for the dags
+        self.dag_path_in_worker_container = conf.get(
+            self.kubernetes_section, 'worker_container_dag_path')
+
+        self.dags_in_image = conf.get(
+            self.kubernetes_section, 'dags_in_image') or self.dags_in_worker_container
 
         # NOTE: `git_repo` and `git_branch` must be specified together as a pair
         # The http URL of the git repository to clone from
@@ -237,12 +245,11 @@ class KubeConfig:
         self._validate()
 
     def _validate(self):
-
         # TODO: use XOR for dags_volume_claim and git_dags_folder_mount_point
         if not self.dags_volume_claim \
-           and not self.dags_volume_host \
-           and not self.dags_in_image \
-           and (not self.git_repo or not self.git_branch or not self.git_dags_folder_mount_point):
+            and not self.dags_volume_host \
+            and not self.dags_in_image \
+            and (not self.git_repo or not self.git_branch or not self.git_dags_folder_mount_point):
             raise AirflowConfigException(
                 'In kubernetes mode the following must be set in the `kubernetes` '
                 'config section: `dags_volume_claim` '
