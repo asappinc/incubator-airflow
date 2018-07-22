@@ -237,6 +237,7 @@ class KubeConfig:
         self._validate()
 
     def _validate(self):
+
         # TODO: use XOR for dags_volume_claim and git_dags_folder_mount_point
         if not self.dags_volume_claim \
            and not self.dags_volume_host \
