@@ -144,7 +144,7 @@ class KubeConfig:
         # which means we are allow to "skip" the volumes and git repo syncing
         self.dags_in_worker_container = conf.getboolean(
             self.kubernetes_section, 'worker_container_contains_dags')
-        
+
         # path inside the worker container for the dags
         self.dag_path_in_worker_container = conf.get(
             self.kubernetes_section, 'worker_container_dag_path')
