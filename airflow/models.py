@@ -1401,6 +1401,9 @@ class TaskInstance(Base, LoggingMixin):
             delay = timedelta(seconds=delay_backoff_in_seconds)
             if self.task.max_retry_delay:
                 delay = min(self.task.max_retry_delay, delay)
+
+        if self.end_date is None:
+            return datetime.now() + delay
         return self.end_date + delay
 
     def ready_for_retry(self):
