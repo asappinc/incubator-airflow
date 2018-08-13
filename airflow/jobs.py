@@ -1803,7 +1803,7 @@ class SchedulerJob(BaseJob):
             return
 
         try:
-            with open(touch_file, 'a') as t_file:
+            with open(touch_file, 'a'):
                 os.utime(touch_file, None)
         except Exception as excp:
             self.log.error("Failed to touch %s: %s", touch_file, excp)
