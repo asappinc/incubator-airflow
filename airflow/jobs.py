@@ -1808,12 +1808,12 @@ class SchedulerJob(BaseJob):
         if not conf.has_option('scheduler', 'liveness_touch_file'):
             return
 
-        touch_file = conf.get('scheduler', 'liveness_touch_file')
+        touch_file = conf.get('scheduler', 'liveness_touch_file', None)
         if not touch_file:
             return
 
         try:
-            with open(touch_file, 'a'):
+            with open(touch_file, 'a') as t_file:
                 os.utime(touch_file, None)
         except Exception as excp:
             self.log.error("Failed to touch %s: %s", touch_file, excp)
