@@ -1802,9 +1802,8 @@ class SchedulerJob(BaseJob):
         #
         # if [[ $(find {liveness_touch_file} -type f -mmin +10) = {liveness_touch_file} ]]; then
         #   exit 1
-        # fi]
+        # fi
         #
-        # exit 0
         #
         if not conf.has_option('scheduler', 'liveness_touch_file'):
             return
