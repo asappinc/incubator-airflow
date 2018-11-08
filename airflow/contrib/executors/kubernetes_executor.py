@@ -515,7 +515,7 @@ class AirflowKubernetesScheduler(LoggingMixin):
             return (
                 labels['dag_id'], labels['task_id'],
                 self._label_safe_datestring_to_datetime(labels['execution_date']),
-                try_num
+                try_num,
             )
         except Exception as e:
             self.log.warn(
