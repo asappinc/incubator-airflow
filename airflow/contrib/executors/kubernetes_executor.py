@@ -635,7 +635,7 @@ class KubernetesExecutor(BaseExecutor, LoggingMixin):
 
     def _change_state(self, key, state, pod_id):
         # FIXME -- These failed pods may stack up overtime, might want to revisit saving them.
-        if state != State.RUNNING and state != State.FAILED:
+        if state != State.RUNNING:
             self.kube_scheduler.delete_pod(pod_id)
             try:
                 self.log.info('Deleted pod: %s', str(key))
