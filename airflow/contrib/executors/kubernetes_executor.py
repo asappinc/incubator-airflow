@@ -137,15 +137,6 @@ class KubeConfig:
             self.kubernetes_section, 'worker_service_account_name')
         self.image_pull_secrets = conf.get(self.kubernetes_section, 'image_pull_secrets')
 
-        # If this is set, we assume the container for the worker contains the dags
-        # which means we are allow to "skip" the volumes and git repo syncing
-        self.dags_in_worker_container = conf.getboolean(
-            self.kubernetes_section, 'worker_container_contains_dags')
-
-        # path inside the worker container for the dags
-        self.dag_path_in_worker_container = conf.get(
-            self.kubernetes_section, 'worker_container_dag_path')
-
         # NOTE: `git_repo` and `git_branch` must be specified together as a pair
         # The http URL of the git repository to clone from
         self.git_repo = conf.get(self.kubernetes_section, 'git_repo')
@@ -213,19 +204,11 @@ class KubeConfig:
         self._validate()
 
     def _validate(self):
-        if (
-            not self.dags_volume_claim and
-            (not self.git_repo or not self.git_branch) and
-            not self.dags_in_worker_container
-        ):
+        if not self.dags_volume_claim and (not self.git_repo or not self.git_branch):
             raise AirflowConfigException(
                 'In kubernetes mode the following must be set in the `kubernetes` '
-                'config section: `dags_volume_claim` or `git_repo and git_branch` '
-                'or `worker_container_contains_dags`')
-        if self.dags_in_worker_container and not self.dag_path_in_worker_container:
-            raise AirflowConfigException(
-                'In kubernetes mode if `worker_container_contains_dags` is True '
-                '`worker_container_dag_path` is also required')
+                'config section: `dags_volume_claim` or `git_repo and git_branch`')
+
 
 class KubernetesJobWatcher(multiprocessing.Process, LoggingMixin, object):
     def __init__(self, namespace, watcher_queue, resource_version, worker_uuid):
@@ -300,7 +283,7 @@ class KubernetesJobWatcher(multiprocessing.Process, LoggingMixin, object):
             self.log.info('Event: %s Pending', pod_id)
         elif status == 'Failed':
             self.log.info('Event: %s Failed', pod_id)
-            self.watcher_queue.put((pod_id, State.UP_FOR_RETRY, labels, resource_version))
+            self.watcher_queue.put((pod_id, State.FAILED, labels, resource_version))
         elif status == 'Succeeded':
             self.log.info('Event: %s Succeeded', pod_id)
             self.watcher_queue.put((pod_id, None, labels, resource_version))
@@ -478,7 +461,7 @@ class AirflowKubernetesScheduler(LoggingMixin):
             return (
                 labels['dag_id'], labels['task_id'],
                 self._label_safe_datestring_to_datetime(labels['execution_date']),
-                labels.get('try_number', "1"))
+                labels['try_number'])
         except Exception as e:
             self.log.warn(
                 'Error while converting labels to key; labels: %s; exception: %s',
@@ -606,9 +589,8 @@ class KubernetesExecutor(BaseExecutor, LoggingMixin):
         self.task_queue.put((key, command, kube_executor_config))
 
     def sync(self):
-        # way too verbose
-        #if self.running:
-        #    self.log.info('self.running: %s', self.running)
+        if self.running:
+            self.log.info('self.running: %s', self.running)
         if self.queued_tasks:
             self.log.info('self.queued: %s', self.queued_tasks)
         self.kube_scheduler.sync()
@@ -629,8 +611,7 @@ class KubernetesExecutor(BaseExecutor, LoggingMixin):
             self.kube_scheduler.run_next((key, command, kube_executor_config))
 
     def _change_state(self, key, state, pod_id):
-        # FIXME -- These failed pods may stack up overtime, might want to revisit saving them.
-        if state != State.RUNNING and state != State.FAILED:
+        if state != State.RUNNING:
             self.kube_scheduler.delete_pod(pod_id)
             try:
                 self.log.info('Deleted pod: %s', str(key))

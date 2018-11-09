@@ -141,7 +141,7 @@ class BaseExecutor(LoggingMixin):
                                    queue=queue,
                                    executor_config=ti.executor_config)
             else:
-                self.log.info(
+                self.logger.info(
                     'Task is already running, not sending to '
                     'executor: {}'.format(key))
 

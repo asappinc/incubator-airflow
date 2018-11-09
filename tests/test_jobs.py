@@ -28,38 +28,37 @@ import logging
 import multiprocessing
 import os
 import shutil
+import six
 import threading
 import time
 import unittest
 from tempfile import mkdtemp
 
-import psutil
-import six
 import sqlalchemy
-from mock import Mock, patch, MagicMock, PropertyMock
 
-from airflow.utils.db import create_session
 from airflow import AirflowException, settings, models
-from airflow import configuration
-
 from airflow.bin import cli
 from airflow.executors import BaseExecutor, SequentialExecutor
 from airflow.jobs import BaseJob, BackfillJob, SchedulerJob, LocalTaskJob
 from airflow.models import DAG, DagModel, DagBag, DagRun, Pool, TaskInstance as TI
-
-from airflow.operators.bash_operator import BashOperator
 from airflow.operators.dummy_operator import DummyOperator
+from airflow.operators.bash_operator import BashOperator
 from airflow.task.task_runner.base_task_runner import BaseTaskRunner
 from airflow.utils import timezone
-from airflow.utils.dag_processing import SimpleDag, SimpleDagBag, list_py_file_paths
+
 from airflow.utils.dates import days_ago
 from airflow.utils.db import provide_session
-from airflow.utils.net import get_hostname
 from airflow.utils.state import State
 from airflow.utils.timeout import timeout
-from tests.core import TEST_DAG_FOLDER
+from airflow.utils.dag_processing import SimpleDag, SimpleDagBag, list_py_file_paths
+from airflow.utils.net import get_hostname
+
+from mock import Mock, patch, MagicMock, PropertyMock
 from tests.executors.test_executor import TestExecutor
 
+from tests.core import TEST_DAG_FOLDER
+
+from airflow import configuration
 configuration.load_test_config()
 
 logger = logging.getLogger(__name__)
@@ -1261,10 +1260,10 @@ class SchedulerJobTest(unittest.TestCase):
 
     def setUp(self):
         self.dagbag = DagBag()
-        with create_session() as session:
-            session.query(models.DagRun).delete()
-            session.query(models.ImportError).delete()
-            session.commit()
+        session = settings.Session()
+        session.query(models.DagRun).delete()
+        session.query(models.ImportError).delete()
+        session.commit()
 
     @staticmethod
     def run_single_scheduler_loop_with_no_dags(dags_folder):
@@ -2048,11 +2047,12 @@ class SchedulerJobTest(unittest.TestCase):
 
         processor = mock.MagicMock()
         processor.get_last_finish_time.return_value = None
-        
+
         scheduler = SchedulerJob(num_runs=0, run_duration=0)
         executor = TestExecutor()
         scheduler.executor = executor
-        scheduler.processor_agent = processor
+
+        scheduler._execute_helper(processor_manager=processor)
 
         ti = dr.get_task_instance(task_id=op1.task_id, session=session)
         self.assertEqual(ti.state, State.NONE)
@@ -2163,7 +2163,6 @@ class SchedulerJobTest(unittest.TestCase):
         ti = dr.get_task_instance('test_dagrun_unfinished', session=session)
         ti.state = State.NONE
         session.commit()
-        
         dr_state = dr.update_state()
         self.assertEqual(dr_state, State.RUNNING)
 
@@ -3011,7 +3010,7 @@ class SchedulerJobTest(unittest.TestCase):
                      run_duration,
                      expected_run_duration)
         self.assertLess(run_duration - expected_run_duration, 5.0)
-        
+
     def test_dag_with_system_exit(self):
         """
         Test to check that a DAG with a system.exit() doesn't break the scheduler.
