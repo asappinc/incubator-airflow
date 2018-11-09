@@ -626,8 +626,11 @@ class KubernetesExecutor(BaseExecutor, LoggingMixin):
         KubeResourceVersion.checkpoint_resource_version(
             last_resource_version, session=self._session)
 
+        self.log.info("self.task_queue is full? %s", self.task_queue.full())
+
         if not self.task_queue.empty():
             key, command, kube_executor_config = self.task_queue.get()
+            self.log.info("self.task_queue not empty: next task: %s", key)
             self.kube_scheduler.run_next((key, command, kube_executor_config))
 
     def _change_state(self, key, state, pod_id):
