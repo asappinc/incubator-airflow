@@ -302,18 +302,20 @@ class Airflow(AirflowBaseView):
                 dag_state_stats = dag_state_stats.filter(dr.dag_id.in_(filter_dag_ids))
             data = {}
             for dag_id, state, count in dag_state_stats:
+                safe_dag_id = models.DAG.to_safe_dag_id(dag_id)
                 if dag_id not in data:
-                    data[dag_id] = {}
-                data[dag_id][state] = count
+                    data[safe_dag_id] = {}
+                data[safe_dag_id][state] = count
 
             if 'all_dags' in filter_dag_ids:
                 filter_dag_ids = [dag_id for dag_id, in session.query(models.DagModel.dag_id)]
 
             for dag_id in filter_dag_ids:
-                payload[dag_id] = []
+                safe_dag_id = models.DAG.to_safe_dag_id(dag_id)
+                payload[safe_dag_id] = []
                 for state in State.dag_states:
-                    count = data.get(dag_id, {}).get(state, 0)
-                    payload[dag_id].append({
+                    count = data.get(safe_dag_id, {}).get(state, 0)
+                    payload[safe_dag_id].append({
                         'state': state,
                         'count': count,
                         'dag_id': dag_id,

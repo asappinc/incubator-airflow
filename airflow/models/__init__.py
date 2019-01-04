@@ -3211,7 +3211,6 @@ class DAG(BaseDag, LoggingMixin):
         self.template_searchpath = template_searchpath
         self.parent_dag = None  # Gets set when DAGs are loaded
         self.last_loaded = timezone.utcnow()
-        self.safe_dag_id = dag_id.replace('.', '__dot__')
         self.max_active_runs = max_active_runs
         self.dagrun_timeout = dagrun_timeout
         self.sla_miss_callback = sla_miss_callback
@@ -3437,9 +3436,17 @@ class DAG(BaseDag, LoggingMixin):
 
         return last
 
+    @staticmethod
+    def to_safe_dag_id(dag_id):
+        return dag_id.replace(".", "__dot__")
+
     @property
     def dag_id(self):
         return self._dag_id
+
+    @property
+    def safe_dag_id(self):
+        return DAG.to_safe_dag_id(self.dag_id)
 
     @dag_id.setter
     def dag_id(self, value):
