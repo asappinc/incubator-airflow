@@ -963,7 +963,7 @@ class Airflow(AirflowBaseView):
                 if dag_id in dagbag.dags:
                     max_active_runs = dagbag.dags[dag_id].max_active_runs
                 payload.append({
-                    'dag_id': dag_id,
+                    'dag_id': models.DAG.to_safe_dag_id(dag_id),
                     'active_dag_run': active_dag_runs,
                     'max_active_runs': max_active_runs,
                 })
