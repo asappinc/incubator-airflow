@@ -51,6 +51,10 @@ class WorkerConfiguration(LoggingMixin):
         if self.kube_config.dags_in_worker_container:
             return []
 
+        # skip if in base container
+        if self.kube_config.dags_in_worker_container:
+            return []
+
         # Otherwise, define a git-sync init container
         init_environment = [{
             'name': 'GIT_SYNC_REPO',

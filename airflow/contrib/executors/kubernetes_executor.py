@@ -140,17 +140,8 @@ class KubeConfig:
             self.kubernetes_section, 'worker_service_account_name')
         self.image_pull_secrets = conf.get(self.kubernetes_section, 'image_pull_secrets')
 
-        # If this is set, we assume the container for the worker contains the dags
-        # which means we are allow to "skip" the volumes and git repo syncing
-        self.dags_in_worker_container = conf.getboolean(
-            self.kubernetes_section, 'worker_container_contains_dags')
-
-        # path inside the worker container for the dags
-        self.dag_path_in_worker_container = conf.get(
-            self.kubernetes_section, 'worker_container_dag_path')
-
         self.dags_in_image = conf.get(
-            self.kubernetes_section, 'dags_in_image') or self.dags_in_worker_container
+            self.kubernetes_section, 'dags_in_image')
 
         # NOTE: `git_repo` and `git_branch` must be specified together as a pair
         # The http URL of the git repository to clone from
