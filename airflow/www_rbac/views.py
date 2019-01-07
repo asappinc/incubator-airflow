@@ -303,7 +303,7 @@ class Airflow(AirflowBaseView):
             data = {}
             for dag_id, state, count in dag_state_stats:
                 safe_dag_id = models.DAG.to_safe_dag_id(dag_id)
-                if dag_id not in data:
+                if safe_dag_id not in data:
                     data[safe_dag_id] = {}
                 data[safe_dag_id][state] = count
 
@@ -380,7 +380,7 @@ class Airflow(AirflowBaseView):
         for dag_id, state, count in qry:
             if 'all_dags' in filter_dag_ids or dag_id in filter_dag_ids:
                 safe_dag_id = models.DAG.to_safe_dag_id(dag_id)
-                if dag_id not in data:
+                if safe_dag_id not in data:
                     data[safe_dag_id] = {}
                 data[safe_dag_id][state] = count
         session.commit()
