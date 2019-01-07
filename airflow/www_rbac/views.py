@@ -391,7 +391,7 @@ class Airflow(AirflowBaseView):
             safe_dag_id = models.DAG.to_safe_dag_id(dag_id)
             payload[safe_dag_id] = []
             for state in State.task_states:
-                count = data.get(dag_id, {}).get(state, 0)
+                count = data.get(safe_dag_id, {}).get(state, 0)
                 payload[safe_dag_id].append({
                     'state': state,
                     'count': count,
