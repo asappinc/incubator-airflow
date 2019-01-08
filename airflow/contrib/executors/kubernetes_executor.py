@@ -120,6 +120,9 @@ class KubeConfig:
     core_section = 'core'
     kubernetes_section = 'kubernetes'
 
+    # labels we are not allowed to as extra labels
+    protected_labels = ('airflow-worker', 'dag_id', 'task_id', 'try_number', 'execution_date',)
+
     def __init__(self):
         configuration_dict = configuration.as_dict(display_sensitive=True)
         self.core_configuration = configuration_dict['core']
@@ -263,7 +266,7 @@ class KubeConfig:
 
         # cannot allow certain labels, as airflow needs them
         if self.kube_extra_labels:
-            for k in ('airflow-worker', 'dag_id', 'task_id', 'try_number', 'execution_date'):
+            for k in self.protected_labels:
                 if k in self.kube_extra_labels:
                     raise AirflowConfigException(
                         'In kubernetes mode `extra_labels` cannot include '
