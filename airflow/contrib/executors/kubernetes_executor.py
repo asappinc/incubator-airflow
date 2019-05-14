@@ -376,7 +376,8 @@ class AirflowKubernetesScheduler(LoggingMixin):
         self.kube_client = kube_client
         self.launcher = PodLauncher(kube_client=self.kube_client)
         self.worker_configuration = WorkerConfiguration(kube_config=self.kube_config)
-        self.watcher_queue = multiprocessing.Queue()
+        self._manager = multiprocessing.Manager()
+        self.watcher_queue = self._manager.Queue()
         self._session = session
         self.worker_uuid = worker_uuid
         self.kube_watcher = self._make_kube_watcher()
@@ -551,6 +552,10 @@ class AirflowKubernetesScheduler(LoggingMixin):
             )
             return None
 
+    def terminate(self):
+        self.watcher_queue.join()
+        self._manager.shutdown()
+
 
 class KubernetesExecutor(BaseExecutor, LoggingMixin):
     def __init__(self):
@@ -561,6 +566,7 @@ class KubernetesExecutor(BaseExecutor, LoggingMixin):
         self.kube_scheduler = None
         self.kube_client = None
         self.worker_uuid = None
+        self._manager = multiprocessing.Manager()
         super(KubernetesExecutor, self).__init__(parallelism=self.kube_config.parallelism)
 
     def clear_not_launched_queued_tasks(self):
@@ -652,8 +658,8 @@ class KubernetesExecutor(BaseExecutor, LoggingMixin):
         # https://github.com/kubernetes-client/python/blob/master/kubernetes/docs
         # /CoreV1Api.md#list_namespaced_pod
         KubeResourceVersion.reset_resource_version(self._session)
-        self.task_queue = Queue()
-        self.result_queue = Queue()
+        self.task_queue = self._manager.Queue()
+        self.result_queue = self._manager.Queue()
         self.kube_client = get_kube_client()
         self.kube_scheduler = AirflowKubernetesScheduler(
             self.kube_config, self.task_queue, self.result_queue, self._session,
@@ -736,3 +742,7 @@ class KubernetesExecutor(BaseExecutor, LoggingMixin):
     def end(self):
         self.log.info('Shutting down Kubernetes executor')
         self.task_queue.join()
+        self.result_queue.join()
+        if self.kube_scheduler:
+            self.kube_scheduler.terminate()
+        self._manager.shutdown()
