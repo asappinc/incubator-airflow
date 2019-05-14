@@ -15,6 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from queue import Empty
+
 import base64
 import json
 import multiprocessing
@@ -142,6 +144,8 @@ class KubeConfig:
         self.kube_node_selectors = configuration_dict.get('kubernetes_node_selectors', {})
         self.delete_worker_pods = conf.getboolean(
             self.kubernetes_section, 'delete_worker_pods')
+        self.worker_pods_creation_batch_size = conf.getint(
+            self.kubernetes_section, 'worker_pods_creation_batch_size')
 
         self.worker_service_account_name = conf.get(
             self.kubernetes_section, 'worker_service_account_name')
@@ -438,11 +442,18 @@ class AirflowKubernetesScheduler(LoggingMixin):
 
         """
         self._health_check_kube_watcher()
-        while not self.watcher_queue.empty():
-            self.process_watcher_task()
+        while True:
+            try:
+                task = self.watcher_queue.get_nowait()
+                try:
+                    self.process_watcher_task(task)
+                finally:
+                    self.watcher_queue.task_done()
+            except Empty:
+                break
 
-    def process_watcher_task(self):
-        pod_id, state, labels, resource_version = self.watcher_queue.get()
+    def process_watcher_task(self, task):
+        pod_id, state, labels, resource_version = task
         self.log.info(
             'Attempting to finish pod; pod_id: %s; state: %s; labels: %s',
             pod_id, state, labels
@@ -667,25 +678,38 @@ class KubernetesExecutor(BaseExecutor, LoggingMixin):
         self.kube_scheduler.sync()
 
         last_resource_version = None
-        while not self.result_queue.empty():
-            results = self.result_queue.get()
-            key, state, pod_id, resource_version = results
-            last_resource_version = resource_version
-            self.log.info('Changing state of %s to %s', results, state)
-            self._change_state(key, state, pod_id)
-
-        KubeResourceVersion.checkpoint_resource_version(
-            last_resource_version, session=self._session)
-
-        if not self.task_queue.empty():
-            task = self.task_queue.get()
-
+        while True:
             try:
-                self.kube_scheduler.run_next(task)
-            except ApiException:
-                self.log.exception('ApiException when attempting ' +
-                                   'to run task, re-queueing.')
-                self.task_queue.put(task)
+                results = self.result_queue.get_nowait()
+                try:
+                    key, state, pod_id, resource_version = results
+                    last_resource_version = resource_version
+                    self.log.info('Changing state of %s to %s', results, state)
+                    try:
+                        self._change_state(key, state, pod_id)
+                    except Exception as e:
+                        self.log.exception('Exception: %s when attempting ' +
+                                           'to change state of %s to %s, re-queueing.', e, results, state)
+                        self.result_queue.put(results)
+                finally:
+                    self.result_queue.task_done()
+            except Empty:
+                break
+
+        KubeResourceVersion.checkpoint_resource_version(last_resource_version)
+
+        for _ in range(self.kube_config.worker_pods_creation_batch_size):
+            try:
+                task = self.task_queue.get_nowait()
+                try:
+                    self.kube_scheduler.run_next(task)
+                except ApiException:
+                    self.log.exception('ApiException when attempting to run task, re-queueing.')
+                    self.task_queue.put(task)
+                finally:
+                    self.task_queue.task_done()
+            except Empty:
+                break
 
     def _change_state(self, key, state, pod_id):
         # FIXME -- These failed pods may stack up overtime, might want to revisit saving them.
