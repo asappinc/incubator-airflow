@@ -928,6 +928,7 @@ class TaskInstance(Base, LoggingMixin):  # pylint: disable=R0902,R0904
             delay_backoff_in_seconds = min(modded_hash, timedelta.max.total_seconds() - 1)
             delay = timedelta(seconds=delay_backoff_in_seconds)
             if self.task.max_retry_delay:
+                print(self.task.max_retry_delay, delay, self.task.task_id, self.task.dag_id)
                 delay = min(self.task.max_retry_delay, delay)
         return self.end_date + delay
 
