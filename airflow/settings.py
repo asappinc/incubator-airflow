@@ -450,7 +450,7 @@ def initialize():
     configure_action_logging()
     # Ensure we close DB connections at scheduler and gunicon worker terminations
     # TODO: bo: 2020-12-11: when remote logging is fixed add this back
-    # atexit.register(dispose_orm)
+    atexit.register(dispose_orm)
 
 # pylint: enable=global-statement
 
