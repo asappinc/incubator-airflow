@@ -1657,7 +1657,7 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
                 # TODO: bobo: setting this to none seems to never get picked up
                 # again in the main dags_needing_dagruns loop, so we just give it
                 # a 5 min uptick from "now"
-                dag_model.next_dagrun_create_after = datetime.datetime.now() + timedelta(seconds=300)
+                dag_model.next_dagrun_create_after = timezone.utcnow() + timedelta(seconds=300)
             else:
                 dag_model.next_dagrun, dag_model.next_dagrun_create_after = dag.next_dagrun_info(
                     dag_model.next_dagrun
