@@ -1582,13 +1582,13 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
         # may find things that have too many runs already, we need to short circuit this
         active_runs_of_dags = dict(
             session.query(DagRun.dag_id, func.count('*'))
-                .filter(
+            .filter(
                 DagRun.dag_id.in_([o.dag_id for o in dag_models]),
                 DagRun.state == State.RUNNING,  # pylint: disable=comparison-with-callable
                 DagRun.external_trigger.is_(False),
-                )
-                .group_by(DagRun.dag_id)
-                .all()
+            )
+            .group_by(DagRun.dag_id)
+            .all()
         )
 
         for dag_model in dag_models:
@@ -1603,7 +1603,7 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
             active_runs_of_dag = active_runs_of_dags.get(dag.dag_id, 0)
             if dag.max_active_runs and active_runs_of_dag >= dag.max_active_runs:
                 self.log.info(
-                    "DAG %s is at (or above) max_active_runs (%d of %d), not creating any more runs",
+                    "create_dag_runs: DAG %s is at (or above) max_active_runs (%d of %d), not creating any more runs",
                     dag.dag_id,
                     active_runs_of_dag,
                     dag.max_active_runs,
