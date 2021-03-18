@@ -1608,6 +1608,7 @@ class SchedulerJob(BaseJob):  # pylint: disable=too-many-instance-attributes
                     active_runs_of_dag,
                     dag.max_active_runs,
                 )
+                continue
 
             dag_hash = self.dagbag.dags_hash.get(dag.dag_id)
             # Explicitly check if the DagRun already exists. This is an edge case
