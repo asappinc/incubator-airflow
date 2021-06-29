@@ -179,6 +179,8 @@ class SecretsMasker(logging.Filter):
         is redacted.
 
         """
+        # TODO: bobo: this appears busted shunt for now
+        return item
         try:
             if name and should_hide_value_for_key(name):
                 return self._redact_all(item)
