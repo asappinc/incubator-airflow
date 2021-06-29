@@ -448,11 +448,10 @@ def initialize():
     # The webservers import this file from models.py with the default settings.
     configure_orm()
     configure_action_logging()
-    # Ensure we close DB connections at scheduler and gunicon worker terminations
+    # Ensure we close DB connections at scheduler and gunicorn worker terminations
     atexit.register(dispose_orm)
 
 # pylint: enable=global-statement
-
 
 # Const stuff
 
