@@ -291,8 +291,14 @@ def prepare_engine_args(disable_connection_pool=False):
     # 'READ COMMITTED' is the default value for PostgreSQL.
     # More information here:
     # https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html"
-    if SQL_ALCHEMY_CONN.startswith('mysql'):
-        engine_args['isolation_level'] = 'READ COMMITTED'
+
+    # TODO[bobo]: this causes alot of overhead for single scheduler worlds for aurora
+    # this Query `SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED`
+    # in in aurora is, for some reason, very slow so connections starts become
+    # very slow
+
+    #if SQL_ALCHEMY_CONN.startswith('mysql'):
+    #    engine_args['isolation_level'] = 'READ COMMITTED'
 
     return engine_args
 
