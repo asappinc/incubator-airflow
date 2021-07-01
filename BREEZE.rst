@@ -580,7 +580,7 @@ Breeze can also be used to prepare airflow packages - both "apache-airflow" main
 provider packages.
 
 You can read more about testing provider packages in
-`TESTING.rst <TESTING.rst#running-tests-with-packages>`_
+`TESTING.rst <TESTING.rst#running-tests-with-provider-packages>`_
 
 There are several commands that you can run in Breeze to manage and build packages:
 
@@ -2445,9 +2445,9 @@ This is the current syntax for  `./breeze <./breeze>`_:
           Kind version - only used in case one of kind-cluster commands is used.
           One of:
 
-                 v0.10.0
+                 v0.11.1
 
-          Default: v0.10.0
+          Default: v0.11.1
 
   --helm-version HELM_VERSION
           Helm version - only used in case one of kind-cluster commands is used.
