@@ -78,5 +78,10 @@ class AirflowJsonEncoder(JSONEncoder):
             from airflow.kubernetes.pod_generator import PodGenerator
 
             return PodGenerator.serialize_pod(obj)
+        elif k8s is not None and isinstance(obj, k8s.V1ResourceRequirements):
+            return {
+                "limits": obj.limits,
+                "requests": obj.requests
+            }
 
         raise TypeError(f"Object of type '{obj.__class__.__name__}' is not JSON serializable")

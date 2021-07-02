@@ -2462,7 +2462,10 @@ class DagModel(Base):
                 active_runs_of_dag,
                 dag.max_active_runs,
             )
-            self.next_dagrun_create_after = None
+            # TODO[bobo] setting this to none seems to never get picked up
+            # again in the main dags_needing_dagruns loop, so we just let the above computation ride
+            # commented out the below
+            # self.next_dagrun_create_after = None
 
         log.info("Setting next_dagrun for %s to %s", dag.dag_id, self.next_dagrun)
 

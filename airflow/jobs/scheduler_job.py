@@ -967,11 +967,36 @@ class SchedulerJob(BaseJob):
             session.query(DagRun.dag_id, DagRun.execution_date).filter(active_dagruns_filter).all()
         )
 
+        # TODO[bobo] not the best thing since the next dag run query in _create_dagruns_for_dags
+        # may find things that have too many runs already, we need to short circuit this
+        active_runs_of_dags = dict(
+            session.query(DagRun.dag_id, func.count('*'))
+            .filter(
+                DagRun.dag_id.in_([o.dag_id for o in dag_models]),
+                DagRun.state == State.RUNNING,  # pylint: disable=comparison-with-callable
+                DagRun.external_trigger.is_(False),
+            )
+            .group_by(DagRun.dag_id)
+            .all()
+        )
+
         for dag_model in dag_models:
             try:
                 dag = self.dagbag.get_dag(dag_model.dag_id, session=session)
             except SerializedDagNotFound:
                 self.log.exception("DAG '%s' not found in serialized_dag table", dag_model.dag_id)
+                continue
+
+            # TODO[bobo] not the best thing since the next dag run query in _create_dagruns_for_dags
+            # may find things that have too many runs already, we need to short circuit this
+            active_runs_of_dag = active_runs_of_dags.get(dag.dag_id, 0)
+            if dag.max_active_runs and active_runs_of_dag >= dag.max_active_runs:
+                self.log.info(
+                    "create_dag_runs: DAG %s is at (or above) max_active_runs (%d of %d), not creating any more runs",
+                    dag.dag_id,
+                    active_runs_of_dag,
+                    dag.max_active_runs,
+                )
                 continue
 
             dag_hash = self.dagbag.dags_hash.get(dag.dag_id)
@@ -1043,7 +1068,10 @@ class SchedulerJob(BaseJob):
                     active_runs_of_dag,
                     dag.max_active_runs,
                 )
-                dag_model.next_dagrun_create_after = None
+                # TODO[bobo] setting this to none seems to never get picked up
+                # again in the main dags_needing_dagruns loop, so we just give it
+                # a 5 min uptick from "now"
+                dag_model.next_dagrun_create_after = timezone.utcnow() + timedelta(seconds=300)
             else:
                 dag_model.next_dagrun, dag_model.next_dagrun_create_after = dag.next_dagrun_info(
                     dag_model.next_dagrun
@@ -1120,6 +1148,8 @@ class SchedulerJob(BaseJob):
                     len(currently_active_runs),
                     dag_run.execution_date,
                 )
+                # update the last scheduled tick so we don't endlessly loop over things
+                dag_run.update_state(session=session, execute_callbacks=False)
                 return 0
 
         self._verify_integrity_if_dag_changed(dag_run=dag_run, session=session)
