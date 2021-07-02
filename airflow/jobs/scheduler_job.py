@@ -305,7 +305,12 @@ class SchedulerJob(BaseJob):
 
         # Get the pool settings. We get a lock on the pool rows, treating this as a "critical section"
         # Throws an exception if lock cannot be obtained, rather than blocking
-        pools = models.Pool.slots_stats(lock_rows=True, session=session)
+
+        # TODO: [bobo] seems to make DB CPU crazy and very slow
+        # and if things are a little "less then correct" for us (i.e. a task
+        # get scheduled when the pools are full, not biggy this will still stop
+        # new tasks from going out)
+        pools = models.Pool.slots_stats(lock_rows=False, session=session)
 
         # If the pools are full, there is no point doing anything!
         # If _somehow_ the pool is overfull, don't let the limit go negative - it breaks SQL
