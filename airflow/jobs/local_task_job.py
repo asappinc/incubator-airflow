@@ -78,15 +78,15 @@ class LocalTaskJob(BaseJob):
             """Setting kill signal handler"""
             self.log.error("Received SIGTERM. Terminating subprocesses")
             self.on_kill()
-            self.task_instance.refresh_from_db()
-            # TODO: [bobo] this behavior (the original is FAILED) really SUCKS as it causing things
+            # TODO: [bobo] this behavior really SUCKS as it causing things
             # to never retry when they should .. sigterms can come from
             # all sorts of places "outside" airflow in K8 and this behavior halts
             # all the jobs .. if something is truly wrong then after retries this will
             # eventually fail
-            if self.task_instance.state not in State.finished:
-                self.task_instance.set_state(State.UP_FOR_RETRY)
-            self.task_instance._run_finished_callback(error="task received sigterm")
+            # self.task_instance.refresh_from_db()
+            # if self.task_instance.state not in State.finished:
+            #    self.task_instance.set_state(State.FAILED)
+            # self.task_instance._run_finished_callback(error="task received sigterm")
             raise AirflowException("LocalTaskJob received SIGTERM signal")
 
         signal.signal(signal.SIGTERM, signal_handler)
