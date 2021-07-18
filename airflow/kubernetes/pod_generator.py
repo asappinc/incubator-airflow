@@ -101,6 +101,11 @@ class PodGenerator:
     :type extract_xcom: bool
     """
 
+    # TODO: [bobo] when making a pod name the default airflow does {name}.{uuid}
+    # that "dot" makes things non-address able (for spark driver modes)
+    # this we make things "-" so it is
+    UNIQUE_POD_ID_SEP = "-"
+
     def __init__(
         self,
         pod: Optional[k8s.V1Pod] = None,
@@ -453,7 +458,7 @@ class PodGenerator:
         # Strip trailing '-' and '.' as they can't be followed by '.'
         trimmed_pod_id = pod_id[:MAX_LABEL_LEN].rstrip('-.')
 
-        safe_pod_id = f"{trimmed_pod_id}.{safe_uuid}"
+        safe_pod_id = f"{trimmed_pod_id}{PodGenerator.UNIQUE_POD_ID_SEP}{safe_uuid}"
         return safe_pod_id
 
 
