@@ -153,10 +153,17 @@ class LocalTaskJob(BaseJob):
         # task exited by itself, so we need to check for error file
         # in case it failed due to runtime exception/error
         error = None
-        if self.task_instance.state == State.RUNNING:
+
+        # TODO: [bobo] this behavior really SUCKS as it causing things
+        # to never retry when they should .. sigterms can come from
+        # all sorts of places "outside" airflow in K8 and this behavior halts
+        # all the jobs .. if something is truly wrong then after retries this will
+        # eventually fail
+
+        # if self.task_instance.state == State.RUNNING:
             # This is for a case where the task received a sigkill
             # while running
-            self.task_instance.set_state(State.FAILED)
+        #    self.task_instance.set_state(State.FAILED)
         if self.task_instance.state != State.SUCCESS:
             error = self.task_runner.deserialize_run_error()
         self.task_instance._run_finished_callback(error=error)
