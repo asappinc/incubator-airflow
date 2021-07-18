@@ -1487,6 +1487,7 @@ class TaskInstance(Base, LoggingMixin):
             self.state = State.FAILED
             email_for_state = task.email_on_failure
         else:
+            self.log.info("[bobo] setting tasks UP_FOR_RETRY")
             self.state = State.UP_FOR_RETRY
             email_for_state = task.email_on_retry
 
@@ -1499,7 +1500,16 @@ class TaskInstance(Base, LoggingMixin):
 
         if not test_mode:
             session.merge(self)
+            self.log.info(
+                "[bobo] merge task_id: %s, state: %s",
+                self.task_id, self.state.upper()
+            )
+            
         session.commit()
+        self.log.info(
+            "[bobo] post DB commit task_id: %s, state: %s",
+            self.task_id, self.state.upper()
+        )
 
     @provide_session
     def handle_failure_with_callback(
