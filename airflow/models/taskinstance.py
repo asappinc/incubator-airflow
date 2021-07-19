@@ -1223,8 +1223,16 @@ class TaskInstance(Base, LoggingMixin):
         if not test_mode:
             session.add(Log(self.state, self))
             session.merge(self)
+            self.log.info(
+                "[bobo] merge task_id: %s, state: %s",
+                self.task_id, self.state.upper()
+            )
 
         session.commit()
+        self.log.info(
+            "[bobo] commit task_id: %s, state: %s",
+            self.task_id, self.state.upper()
+        )
 
     def _prepare_and_execute_task_with_callbacks(self, context, task):
         """Prepare Task for Execution"""
@@ -1504,7 +1512,7 @@ class TaskInstance(Base, LoggingMixin):
                 "[bobo] merge task_id: %s, state: %s",
                 self.task_id, self.state.upper()
             )
-            
+
         session.commit()
         self.log.info(
             "[bobo] post DB commit task_id: %s, state: %s",
