@@ -530,8 +530,15 @@ class DagRun(Base, LoggingMixin):
         # Check dependencies
         for st in scheduleable_tasks:
             old_state = st.state
+            # TODO: [bobo] there seems to be a race between when a "task as failed"
+            # the DB is marked state saved "fail" BUT the task is really UP_FOR_RETRY
+            # (see other places [bobo] where SIGTERMS cause this Failed state initially but
+            # then "resets" things to UP for retry, and that process also has a RACE
+            # so like the other race condition, we are going back to the old behavior
+            # of NOT marking these tasks as upstream failed as that too wedges the entire planet)
+            # the marking happens in "trigger_rule_dep.py"
             if st.are_dependencies_met(
-                dep_context=DepContext(flag_upstream_failed=True, finished_tasks=finished_tasks),
+                dep_context=DepContext(flag_upstream_failed=False, finished_tasks=finished_tasks),
                 session=session,
             ):
                 ready_tis.append(st)
