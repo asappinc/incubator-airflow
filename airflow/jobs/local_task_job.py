@@ -165,10 +165,11 @@ class LocalTaskJob(BaseJob):
         # all the jobs .. if something is truly wrong then after retries this will
         # eventually fail
 
-        # if self.task_instance.state == State.RUNNING:
-            # This is for a case where the task received a sigkill
-            # while running
-        #    self.task_instance.set_state(State.FAILED)
+        if self.task_instance.state == State.RUNNING:
+           # This is for a case where the task received a sigkill
+           # while running ...
+           # [bobo] rather then just "fail the dag" mark it for RETRY
+           self.task_instance.set_state(State.UP_FOR_RETRY)
         if self.task_instance.state != State.SUCCESS:
             error = self.task_runner.deserialize_run_error()
         self.task_instance._run_finished_callback(error=error)

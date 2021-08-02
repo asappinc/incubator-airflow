@@ -1036,6 +1036,8 @@ class DAG(LoggingMixin):
         )
         if min_date is None:
             min_date = timezone.utc_epoch()
+        else:
+            min_date = min_date.execution_date
         return self.get_task_instances(start_date=min_date, end_date=base_date, session=session)
 
     @provide_session
