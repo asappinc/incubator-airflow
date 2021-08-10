@@ -170,6 +170,7 @@ class LocalTaskJob(BaseJob):
            # while running ...
            # [bobo] rather then just "fail the dag" mark it for RETRY
            self.task_instance.set_state(State.UP_FOR_RETRY)
+        # TODO: [bobo]: if the task is skipped no error to mention
         if self.task_instance.state != State.SUCCESS and self.task_instance.state != State.SKIPPED:
             error = self.task_runner.deserialize_run_error()
         self.task_instance._run_finished_callback(error=error)

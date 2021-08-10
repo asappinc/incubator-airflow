@@ -1346,6 +1346,7 @@ class TaskInstance(Base, LoggingMixin):
                 context = self.get_template_context()
                 context["exception"] = error
                 task.on_failure_callback(context)
+        # TODO: [bobo]: run "success" callback if task has been skipped
         elif self.state == State.SUCCESS or self.state == State.SKIPPED:
             task = self.task
             if task.on_success_callback is not None:
