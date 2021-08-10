@@ -1346,7 +1346,7 @@ class TaskInstance(Base, LoggingMixin):
                 context = self.get_template_context()
                 context["exception"] = error
                 task.on_failure_callback(context)
-        elif self.state == State.SUCCESS:
+        elif self.state == State.SUCCESS or self.state == State.SKIPPED:
             task = self.task
             if task.on_success_callback is not None:
                 context = self.get_template_context()
