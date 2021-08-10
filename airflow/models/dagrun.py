@@ -458,6 +458,11 @@ class DagRun(Base, LoggingMixin):
         # if *all tasks* are deadlocked, the run failed
         elif unfinished_tasks and none_depends_on_past and none_task_concurrency and not are_runnable_tasks:
             self.log.error('Deadlock; marking run %s failed', self)
+            # TODO: [bobo] log some items for debugging
+            self.log.info(
+                "DEADLOCK: unfinished_tasks: %s, none_depends_on_past: %s, none_task_concurrency: %s, are_runnable_tasks: %s",
+                unfinished_tasks, none_depends_on_past, none_task_concurrency, are_runnable_tasks
+            )
             self.set_state(State.FAILED)
             if execute_callbacks:
                 dag.handle_callback(self, success=False, reason='all_tasks_deadlocked', session=session)
