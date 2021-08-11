@@ -412,7 +412,7 @@ class DagRun(Base, LoggingMixin):
             unfinished_tasks = info.unfinished_tasks
 
             # TODO [bobo]: task_instance_scheduling_decisions should not include "SKIPPED" tasks but it's not
-            unfinished_tasks = [t for t in unfinished_tasks if t.state in State.unfinished]
+            unfinished_tasks = [t for t in unfinished_tasks if t.state not in State.SKIPPED]
 
             none_depends_on_past = all(not t.task.depends_on_past for t in unfinished_tasks)
             none_task_concurrency = all(t.task.task_concurrency is None for t in unfinished_tasks)
@@ -545,8 +545,9 @@ class DagRun(Base, LoggingMixin):
             # so like the other race condition, we are going back to the old behavior
             # of NOT marking these tasks as upstream failed as that too wedges the entire planet)
             # the marking happens in "trigger_rule_dep.py"
+            # [bobo]: 2021-08-10 debuging way skipped are not skipping others setting flag_upstream_failed=True
             if st.are_dependencies_met(
-                dep_context=DepContext(flag_upstream_failed=False, finished_tasks=finished_tasks),
+                dep_context=DepContext(flag_upstream_failed=True, finished_tasks=finished_tasks),
                 session=session,
             ):
                 ready_tis.append(st)
