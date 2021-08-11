@@ -411,6 +411,9 @@ class DagRun(Base, LoggingMixin):
             finished_tasks = info.finished_tasks
             unfinished_tasks = info.unfinished_tasks
 
+            # TODO [bobo]: task_instance_scheduling_decisions should not include "SKIPPED" tasks but it's not
+            unfinished_tasks = [t for t in unfinished_tasks if t.state in State.unfinished]
+
             none_depends_on_past = all(not t.task.depends_on_past for t in unfinished_tasks)
             none_task_concurrency = all(t.task.task_concurrency is None for t in unfinished_tasks)
 
