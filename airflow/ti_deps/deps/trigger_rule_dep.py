@@ -126,9 +126,12 @@ class TriggerRuleDep(BaseTIDep):
         # handling instant state assignment based on trigger rules
         if flag_upstream_failed:
             if trigger_rule == TR.ALL_SUCCESS:
-                if upstream_failed or failed:
-                    ti.set_state(State.UPSTREAM_FAILED, session)
-                elif skipped:
+                # TODO [bobo]: race condition between "retry vs fail" so just "don't" do this
+                #if upstream_failed or failed:
+                #    ti.set_state(State.UPSTREAM_FAILED, session)
+                #elif skipped:
+                #    ti.set_state(State.SKIPPED, session)
+                if skipped:
                     ti.set_state(State.SKIPPED, session)
             elif trigger_rule == TR.ALL_FAILED:
                 if successes or skipped:
@@ -144,12 +147,16 @@ class TriggerRuleDep(BaseTIDep):
                 if upstream_done and not (failed or upstream_failed):
                     ti.set_state(State.SKIPPED, session)
             elif trigger_rule == TR.NONE_FAILED:
-                if upstream_failed or failed:
-                    ti.set_state(State.UPSTREAM_FAILED, session)
+                # TODO [bobo]: race condition "retry vs fail" so just "don't" do this
+                #if upstream_failed or failed:
+                #    ti.set_state(State.UPSTREAM_FAILED, session)
             elif trigger_rule == TR.NONE_FAILED_OR_SKIPPED:
-                if upstream_failed or failed:
-                    ti.set_state(State.UPSTREAM_FAILED, session)
-                elif skipped == upstream:
+                #if upstream_failed or failed:
+                #    ti.set_state(State.UPSTREAM_FAILED, session)
+                #elif skipped == upstream:
+                #    ti.set_state(State.SKIPPED, session)
+                # TODO [bobo]: race condition "retry vs fail"  so just "don't" do this
+                if skipped == upstream:
                     ti.set_state(State.SKIPPED, session)
             elif trigger_rule == TR.NONE_SKIPPED:
                 if skipped:
