@@ -150,6 +150,7 @@ class TriggerRuleDep(BaseTIDep):
                 # TODO [bobo]: race condition "retry vs fail" so just "don't" do this
                 #if upstream_failed or failed:
                 #    ti.set_state(State.UPSTREAM_FAILED, session)
+                pass
             elif trigger_rule == TR.NONE_FAILED_OR_SKIPPED:
                 #if upstream_failed or failed:
                 #    ti.set_state(State.UPSTREAM_FAILED, session)
